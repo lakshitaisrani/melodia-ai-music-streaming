@@ -13,6 +13,7 @@ const Search = () => {
   const { query, results, loading, error } = useSelector((state) => state.search);
   const { currentTrack, playTrack } = usePlayer();
   const [localQuery, setLocalQuery] = useState(urlQuery || query || '');
+  const [activeGenre, setActiveGenre] = useState(searchParams.get('genre') || '');
   const [isFocused, setIsFocused] = useState(false);
 
   // Sync with URL query on mount/change
@@ -26,19 +27,23 @@ const Search = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       dispatch(setSearchQuery(localQuery || ''));
-      if (localQuery && localQuery.trim().length >= 2) {
-        setSearchParams({ q: localQuery });
-        dispatch(fetchSearchResults(localQuery));
+      if ((localQuery && localQuery.trim().length >= 2) || activeGenre) {
+        const params = {};
+        if (localQuery) params.q = localQuery;
+        if (activeGenre) params.genre = activeGenre;
+        setSearchParams(params);
+        dispatch(fetchSearchResults({ query: localQuery, genre: activeGenre }));
       } else {
         setSearchParams({});
         dispatch(clearSearchResults());
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [localQuery, dispatch, setSearchParams]);
+  }, [localQuery, activeGenre, dispatch, setSearchParams]);
 
   const handleClear = () => {
     setLocalQuery('');
+    setActiveGenre('');
     dispatch(setSearchQuery(''));
     dispatch(clearSearchResults());
   };
@@ -84,18 +89,24 @@ const Search = () => {
           <section>
             <h4 className="text-xs font-bold text-primary uppercase tracking-widest mb-4">Genre</h4>
             <div className="flex flex-wrap gap-2">
-              {['Pop', 'Rock', 'Hip-Hop', 'EDM', 'Jazz'].map((genre, idx) => (
-                <button key={genre} className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${idx === 0 ? 'bg-primary/20 border border-primary/30 text-primary' : 'bg-surface-container border border-white/5 text-on-surface-variant hover:bg-white/10'}`}>
-                  {genre}
-                </button>
-              ))}
+              {['Pop', 'Rock', 'Hip-Hop', 'EDM', 'Jazz'].map((genre) => {
+                const isActive = activeGenre === genre.toLowerCase();
+                return (
+                  <button 
+                    key={genre} 
+                    onClick={() => setActiveGenre(isActive ? '' : genre.toLowerCase())}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${isActive ? 'bg-primary/20 border border-primary/30 text-primary' : 'bg-surface-container border border-white/5 text-on-surface-variant hover:bg-white/10'}`}>
+                    {genre}
+                  </button>
+                );
+              })}
             </div>
           </section>
         </aside>
 
         <div className="flex-grow flex flex-col gap-12">
           {/* Main Content Area */}
-          {!localQuery || localQuery.trim().length < 2 ? (
+          {(!localQuery || localQuery.trim().length < 2) && !activeGenre ? (
             <div className="flex flex-col items-center justify-center py-20 text-center opacity-70">
               <SearchIcon className="w-16 h-16 text-on-surface-variant mb-6" />
               <h3 className="text-2xl font-bold text-on-surface mb-2">Search for songs, artists or albums</h3>

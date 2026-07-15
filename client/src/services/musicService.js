@@ -5,8 +5,12 @@ const getTrending = async () => {
     return response.data;
 };
 
-const searchSongs = async (query) => {
-    const response = await apiClient.get('/music/search', { params: { q: query } });
+const searchSongs = async (query, genre) => {
+    const params = {};
+    if (query) params.q = query;
+    if (genre) params.genre = genre.toLowerCase();
+    
+    const response = await apiClient.get('/music/search', { params });
     return response.data;
 };
 

@@ -3,9 +3,20 @@ import musicService from '../services/musicService';
 
 export const fetchSearchResults = createAsyncThunk(
     'search/fetchSearchResults',
-    async (query, { rejectWithValue }) => {
+    async (params, { rejectWithValue }) => {
         try {
-            const data = await musicService.searchSongs(query);
+            // params can be a string (legacy) or an object { query, genre }
+            let query = '';
+            let genre = '';
+            
+            if (typeof params === 'string') {
+                query = params;
+            } else if (params) {
+                query = params.query || '';
+                genre = params.genre || '';
+            }
+
+            const data = await musicService.searchSongs(query, genre);
             return data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Failed to search music');

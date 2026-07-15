@@ -14,23 +14,26 @@ const musicController = {
 
     searchMusic: async (req, res) => {
         try {
-            const query = req.query.q;
+            const query = req.query.q || '';
+            const genre = req.query.genre || '';
             
-            if (!query) {
-                return res.status(400).json({ error: "Search query 'q' is required" });
+            if (!query && !genre) {
+                return res.status(400).json({ error: "Search query 'q' or 'genre' is required" });
             }
+
+            const searchQuery = [query, genre].filter(Boolean).join(' ');
 
             let searchResults;
             if (spotifyService.isConfigured()) {
                 try {
-                    searchResults = await spotifyService.searchSongs(query);
-                    console.log(`Spotify search successful for "${query}"`);
+                    searchResults = await spotifyService.searchSongs(searchQuery);
+                    console.log(`Spotify search successful for "${searchQuery}"`);
                 } catch (spotifyError) {
                     console.warn("Spotify search failed, falling back to YouTube:", spotifyError.message);
-                    searchResults = await youtubeService.searchMusic(query);
+                    searchResults = await youtubeService.searchMusic(searchQuery);
                 }
             } else {
-                searchResults = await youtubeService.searchMusic(query);
+                searchResults = await youtubeService.searchMusic(searchQuery);
             }
 
             res.status(200).json(searchResults);
