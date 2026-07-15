@@ -64,14 +64,14 @@ router.post('/', authenticateUser, async (req, res) => {
     }
 });
 
-// GET /api/playlists - Get user's playlists
-router.get('/', authenticateUser, async (req, res) => {
+// GET /api/playlists/my - Get user's playlists
+router.get('/my', authenticateUser, async (req, res) => {
     try {
         let playlists;
         if (mongoose.connection.readyState === 1) {
-            playlists = await Playlist.find({ owner: req.user._id }).sort({ updatedAt: -1 });
+            playlists = await Playlist.find({ owner: req.user._id }).sort({ createdAt: -1 });
         } else {
-            playlists = mockDb.getPlaylists(req.user._id);
+            playlists = mockDb.getPlaylists(req.user._id).sort((a, b) => b.createdAt - a.createdAt);
         }
         res.status(200).json(playlists);
     } catch (error) {
@@ -102,32 +102,7 @@ router.get('/liked', authenticateUser, async (req, res) => {
     }
 });
 
-// GET /api/playlists/ai - Get AI playlists
-router.get('/ai', authenticateUser, async (req, res) => {
-    try {
-        let aiPlaylists = [];
-        if (mongoose.connection.readyState === 1) {
-            aiPlaylists = await Playlist.find({ 
-                owner: req.user._id, 
-                isAIGenerated: true 
-            }).sort({ updatedAt: -1 }).populate('owner', 'name photoURL');
-        } else {
-            const allMockPlaylists = mockDb.getPlaylists(req.user._id);
-            aiPlaylists = allMockPlaylists.filter(p => p.isAIGenerated === true);
-            aiPlaylists.forEach(p => {
-                p.owner = {
-                    _id: req.user._id,
-                    name: req.user.name,
-                    photoURL: req.user.photoURL
-                };
-            });
-        }
-        res.status(200).json(aiPlaylists);
-    } catch (error) {
-        console.error('Error fetching AI playlists:', error);
-        res.status(500).json({ error: 'Failed to fetch AI playlists' });
-    }
-});
+
 
 // GET /api/playlists/:id - Get specific playlist
 router.get('/:id', authenticateUser, async (req, res) => {

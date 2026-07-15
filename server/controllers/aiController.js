@@ -398,7 +398,7 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
                 discoverPlaylist.songs = playlistSongs;
                 discoverPlaylist.coverImage = coverImage;
                 discoverPlaylist.description = description;
-                discoverPlaylist.playlistType = 'ai';
+                discoverPlaylist.playlistType = 'discover_weekly';
                 discoverPlaylist.isAIGenerated = true;
                 discoverPlaylist.generatedBy = 'discover_weekly';
                 await discoverPlaylist.save();
@@ -410,7 +410,7 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
                     songs: playlistSongs,
                     coverImage,
                     privacy: 'Private',
-                    playlistType: 'ai',
+                    playlistType: 'discover_weekly',
                     isAIGenerated: true,
                     generatedBy: 'discover_weekly'
                 });
@@ -423,7 +423,7 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
                 discoverPlaylist.songs = playlistSongs;
                 discoverPlaylist.coverImage = coverImage;
                 discoverPlaylist.description = description;
-                discoverPlaylist.playlistType = 'ai';
+                discoverPlaylist.playlistType = 'discover_weekly';
                 discoverPlaylist.isAIGenerated = true;
                 discoverPlaylist.generatedBy = 'discover_weekly';
                 await discoverPlaylist.save();
@@ -434,7 +434,7 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
                     songs: playlistSongs,
                     coverImage,
                     privacy: 'Private',
-                    playlistType: 'ai',
+                    playlistType: 'discover_weekly',
                     isAIGenerated: true,
                     generatedBy: 'discover_weekly'
                 });

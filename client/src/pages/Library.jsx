@@ -9,7 +9,7 @@ import GenerateSmartPlaylistModal from '../components/library/GenerateSmartPlayl
 import SongRow from '../components/common/SongRow';
 import PlaylistCard from '../components/explore/PlaylistCard';
 import { fetchLikedSongs } from '../redux/librarySlice';
-import { fetchPlaylists, fetchAIPlaylists, generateDiscoverWeekly, togglePlaylistLike, togglePlaylistSave, deletePlaylist } from '../redux/playlistSlice';
+import { fetchMyPlaylists, generateDiscoverWeekly, togglePlaylistLike, togglePlaylistSave, deletePlaylist } from '../redux/playlistSlice';
 import { usePlayer } from '../hooks/usePlayer';
 import { useToast } from '../context/ToastContext';
 
@@ -85,7 +85,8 @@ const Library = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { likedSongs, loading: libraryLoading } = useSelector(state => state.library);
-  const { playlists, aiPlaylists, loading: playlistsLoading, error: playlistsError } = useSelector(state => state.playlist);
+  const { playlists, loading: playlistsLoading, error: playlistsError } = useSelector(state => state.playlist);
+  const aiPlaylists = playlists?.filter(p => p.playlistType === 'smart_ai' || p.playlistType === 'discover_weekly') || [];
   const { downloadedSongs } = useSelector(state => state.downloads);
   const { user } = useSelector(state => state.auth);
   const { playTrack } = usePlayer();
@@ -198,8 +199,7 @@ const Library = () => {
   useEffect(() => {
     if (user) {
       dispatch(fetchLikedSongs());
-      dispatch(fetchPlaylists());
-      dispatch(fetchAIPlaylists());
+      dispatch(fetchMyPlaylists());
     }
   }, [dispatch, user]);
 
@@ -344,7 +344,7 @@ const Library = () => {
                   <div className="text-center py-12 bg-surface-container/20 border border-white/5 rounded-3xl p-6">
                     <p className="text-red-400 font-medium mb-4">Failed to load playlists: {playlistsError}</p>
                     <button 
-                      onClick={() => { dispatch(fetchPlaylists()); dispatch(fetchAIPlaylists()); }}
+                      onClick={() => { dispatch(fetchMyPlaylists()); }}
                       className="px-6 py-2 rounded-full bg-primary text-on-primary font-bold hover:scale-105 active:scale-95 transition-transform"
                     >
                       Retry Loading

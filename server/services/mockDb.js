@@ -76,7 +76,7 @@ module.exports = {
       privacy: playlistData.privacy || 'Public',
       tags: playlistData.tags || [],
       playlistType: playlistData.playlistType || 'manual',
-      isAIGenerated: playlistData.isAIGenerated || (playlistData.playlistType === 'ai') || false,
+      isAIGenerated: playlistData.isAIGenerated || (playlistData.playlistType === 'smart_ai') || (playlistData.playlistType === 'discover_weekly') || false,
       generatedBy: playlistData.generatedBy || '',
       likes: 0,
       likedBy: [],

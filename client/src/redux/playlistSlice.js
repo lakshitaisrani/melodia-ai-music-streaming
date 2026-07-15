@@ -21,14 +21,6 @@ const updatePlaylistInState = (state, id, updateFn) => {
         }
         return p;
     });
-    state.aiPlaylists = state.aiPlaylists.map(p => {
-        if (p._id === id) {
-            const newP = { ...p };
-            updateFn(newP);
-            return newP;
-        }
-        return p;
-    });
     state.savedPlaylists = state.savedPlaylists.map(p => {
         if (p._id === id) {
             const newP = { ...p };
@@ -66,36 +58,9 @@ export const togglePlaylistSave = createAsyncThunk('playlist/togglePlaylistSave'
     }
 });
 
-export const fetchAIPlaylists = createAsyncThunk('playlist/fetchAIPlaylists', async (_, thunkAPI) => {
+export const fetchMyPlaylists = createAsyncThunk('playlist/fetchMyPlaylists', async (_, thunkAPI) => {
     try {
-        const response = await apiClient.get('/playlists/ai');
-        return response.data;
-    } catch (error) {
-        return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
-    }
-});
-
-export const incrementShareCount = createAsyncThunk('playlist/incrementShareCount', async (id, thunkAPI) => {
-    try {
-        const response = await apiClient.post(`/playlists/${id}/share`);
-        return { id, stats: response.data.stats };
-    } catch (error) {
-        return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
-    }
-});
-
-export const incrementPlayCount = createAsyncThunk('playlist/incrementPlayCount', async (id, thunkAPI) => {
-    try {
-        const response = await apiClient.post(`/playlists/${id}/play`);
-        return { id, stats: response.data.stats };
-    } catch (error) {
-        return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
-    }
-});
-
-export const fetchPlaylists = createAsyncThunk('playlist/fetchPlaylists', async (_, thunkAPI) => {
-    try {
-        const response = await apiClient.get('/playlists');
+        const response = await apiClient.get('/playlists/my');
         return response.data;
     } catch (error) {
         return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
@@ -105,8 +70,7 @@ export const fetchPlaylists = createAsyncThunk('playlist/fetchPlaylists', async 
 export const generateDiscoverWeekly = createAsyncThunk('playlist/generateDiscoverWeekly', async (_, thunkAPI) => {
     try {
         const response = await apiClient.post('/ai/discover-weekly');
-        thunkAPI.dispatch(fetchPlaylists());
-        thunkAPI.dispatch(fetchAIPlaylists());
+        thunkAPI.dispatch(fetchMyPlaylists());
         return response.data.playlist;
     } catch (error) {
         return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
@@ -125,6 +89,7 @@ export const fetchPlaylistDetails = createAsyncThunk('playlist/fetchPlaylistDeta
 export const createPlaylist = createAsyncThunk('playlist/createPlaylist', async (playlistData, thunkAPI) => {
     try {
         const response = await apiClient.post('/playlists', playlistData);
+        thunkAPI.dispatch(fetchMyPlaylists());
         return response.data;
     } catch (error) {
         return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
@@ -134,6 +99,7 @@ export const createPlaylist = createAsyncThunk('playlist/createPlaylist', async 
 export const generateSmartPlaylist = createAsyncThunk('playlist/generateSmartPlaylist', async (data, thunkAPI) => {
     try {
         const response = await apiClient.post('/ai/generate-playlist', data);
+        thunkAPI.dispatch(fetchMyPlaylists());
         return response.data;
     } catch (error) {
         return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
@@ -143,6 +109,7 @@ export const generateSmartPlaylist = createAsyncThunk('playlist/generateSmartPla
 export const updatePlaylist = createAsyncThunk('playlist/updatePlaylist', async ({ id, data }, thunkAPI) => {
     try {
         const response = await apiClient.put(`/playlists/${id}`, data);
+        thunkAPI.dispatch(fetchMyPlaylists());
         return response.data;
     } catch (error) {
         return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
@@ -152,6 +119,7 @@ export const updatePlaylist = createAsyncThunk('playlist/updatePlaylist', async 
 export const deletePlaylist = createAsyncThunk('playlist/deletePlaylist', async (id, thunkAPI) => {
     try {
         await apiClient.delete(`/playlists/${id}`);
+        thunkAPI.dispatch(fetchMyPlaylists());
         return id;
     } catch (error) {
         return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
@@ -179,7 +147,6 @@ export const removeSongFromPlaylist = createAsyncThunk('playlist/removeSong', as
 const initialState = {
     playlists: [],
     likedPlaylists: [],
-    aiPlaylists: [],
     savedPlaylists: [],
     currentPlaylist: null,
     loading: false,
@@ -317,17 +284,6 @@ export const playlistSlice = createSlice({
                 }
             })
 
-            // Fetch AI Playlists
-            .addCase(fetchAIPlaylists.pending, (state) => { state.loading = true; })
-            .addCase(fetchAIPlaylists.fulfilled, (state, action) => {
-                state.loading = false;
-                state.aiPlaylists = action.payload;
-            })
-            .addCase(fetchAIPlaylists.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
-            })
-
             // Increment Share
             .addCase(incrementShareCount.fulfilled, (state, action) => {
                 const { id, stats } = action.payload;
@@ -345,12 +301,12 @@ export const playlistSlice = createSlice({
             })
             
             // Fetch multiple
-            .addCase(fetchPlaylists.pending, (state) => { state.loading = true; })
-            .addCase(fetchPlaylists.fulfilled, (state, action) => {
+            .addCase(fetchMyPlaylists.pending, (state) => { state.loading = true; })
+            .addCase(fetchMyPlaylists.fulfilled, (state, action) => {
                 state.loading = false;
                 state.playlists = action.payload;
             })
-            .addCase(fetchPlaylists.rejected, (state, action) => {
+            .addCase(fetchMyPlaylists.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
@@ -374,7 +330,6 @@ export const playlistSlice = createSlice({
             // Generate Smart Playlist
             .addCase(generateSmartPlaylist.fulfilled, (state, action) => {
                 state.playlists.unshift(action.payload);
-                state.aiPlaylists.unshift(action.payload);
             })
 
             // Generate Discover Weekly
@@ -385,12 +340,6 @@ export const playlistSlice = createSlice({
                 } else {
                     state.playlists.unshift(action.payload);
                 }
-                const aiIndex = state.aiPlaylists.findIndex(p => p._id === action.payload._id);
-                if (aiIndex !== -1) {
-                    state.aiPlaylists[aiIndex] = action.payload;
-                } else {
-                    state.aiPlaylists.unshift(action.payload);
-                }
             })
             
             // Update
@@ -398,10 +347,6 @@ export const playlistSlice = createSlice({
                 const index = state.playlists.findIndex(p => p._id === action.payload._id);
                 if (index !== -1) {
                     state.playlists[index] = action.payload;
-                }
-                const aiIndex = state.aiPlaylists.findIndex(p => p._id === action.payload._id);
-                if (aiIndex !== -1) {
-                    state.aiPlaylists[aiIndex] = action.payload;
                 }
                 const likedIndex = state.likedPlaylists.findIndex(p => p._id === action.payload._id);
                 if (likedIndex !== -1) {
@@ -419,7 +364,6 @@ export const playlistSlice = createSlice({
             // Delete
             .addCase(deletePlaylist.fulfilled, (state, action) => {
                 state.playlists = state.playlists.filter(p => p._id !== action.payload);
-                state.aiPlaylists = state.aiPlaylists.filter(p => p._id !== action.payload);
                 state.likedPlaylists = state.likedPlaylists.filter(p => p._id !== action.payload);
                 state.savedPlaylists = state.savedPlaylists.filter(p => p._id !== action.payload);
                 if (state.currentPlaylist && state.currentPlaylist._id === action.payload) {

@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { ToastProvider } from './context/ToastContext';
 import { setUser, clearUser } from './redux/authSlice';
 import { fetchLikedSongs } from './redux/librarySlice';
-import { fetchPlaylists } from './redux/playlistSlice';
+import { fetchMyPlaylists } from './redux/playlistSlice';
 import apiClient from './services/apiClient';
 
 import Navbar from './components/Navbar';
@@ -106,7 +106,7 @@ function App() {
         const user = JSON.parse(userStr);
         dispatch(setUser(user));
         dispatch(fetchLikedSongs());
-        dispatch(fetchPlaylists());
+        dispatch(fetchMyPlaylists());
 
         // Background profile sync and token validation
         apiClient.get('/user/profile')
