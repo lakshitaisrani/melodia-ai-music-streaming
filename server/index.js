@@ -1,6 +1,5 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
-console.log('GEMINI_API_KEY from env:', process.env.GEMINI_API_KEY);
 
 const express = require('express');
 const cors = require('cors');
@@ -15,7 +14,17 @@ const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : ['http://localhost:5173'];
+app.use(cors({
+    origin: function(origin, callback) {
+        if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(morgan('dev'));
@@ -34,10 +43,6 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// Serve built React client in production
-const clientBuildPath = path.join(__dirname, '../client/dist');
-app.use(express.static(clientBuildPath));
-
 // Register routes
 app.use('/api/auth', authRoutes);
 app.use('/api/music', musicRoutes);
@@ -46,11 +51,6 @@ app.use('/api/library', libraryRoutes);
 app.use('/api/playlists', playlistRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Catch-all: serve React app for any non-API route (client-side routing)
-app.get('/{*path}', (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
-});
 
 // Global Error Handler
 app.use((err, req, res, next) => {
@@ -62,7 +62,7 @@ mongoose.connection.on('error', err => {
     console.error('Mongoose connection error event:', err);
 });
 
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI)
     .then(() => console.log('✓ MongoDB Connected'))
     .catch(err => console.error('MongoDB initial connection error:', err));
 
