@@ -92,7 +92,13 @@ const BottomPlayer = () => {
       });
       setLyrics(res.data.lyrics || 'No lyrics available.');
     } catch (err) {
-      console.error('Failed to load lyrics:', err);
+      console.error('================ FRONTEND LYRICS FETCH ERROR ================');
+      console.error('Failed to load lyrics:', err.message);
+      if (err.response) {
+        console.error('HTTP Status:', err.response.status);
+        console.error('Response Data:', err.response.data);
+      }
+      console.error('=============================================================');
       setLyrics('Failed to load lyrics. Click to retry.');
     } finally {
       setLyricsLoading(false);

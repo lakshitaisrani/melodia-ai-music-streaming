@@ -229,8 +229,14 @@ Do not add introductions, explanations, headings, metadata, credits, or markdown
         const lyrics = completion.choices[0]?.message?.content || 'Lyrics not found.';
         res.status(200).json({ lyrics });
     } catch (error) {
-        console.error('Error fetching lyrics:', error);
-        res.status(500).json({ error: 'Failed to fetch lyrics' });
+        console.error('================ LYRICS FETCH ERROR ================');
+        console.error('Error fetching lyrics:', error.message);
+        const status = error.status || error.response?.status || 500;
+        const details = error.error || error.response?.data || error;
+        console.error('HTTP Status:', status);
+        console.error('Error Details:', details);
+        console.error('====================================================');
+        res.status(status).json({ error: 'Failed to fetch lyrics', details: error.message });
     }
 };
 
