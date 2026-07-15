@@ -12,14 +12,10 @@ const PlaylistCard = ({ playlist }) => {
       
       {/* Playlist Type Badge */}
       <div className="absolute top-4 left-4 z-10">
-        {isAI ? (
+        {isAI && (
           <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-[10px] font-extrabold text-primary shadow-lg uppercase tracking-wider">
             <Sparkles className="w-3 h-3 text-primary animate-pulse" />
             <span>AI Generated</span>
-          </span>
-        ) : (
-          <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-extrabold text-white shadow-lg uppercase tracking-wider">
-            <span>Manual</span>
           </span>
         )}
       </div>

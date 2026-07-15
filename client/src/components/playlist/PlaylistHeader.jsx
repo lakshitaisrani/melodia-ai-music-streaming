@@ -42,13 +42,9 @@ const PlaylistHeader = ({
           <div className="flex items-center gap-2 mb-3">
             <span className="text-primary font-bold text-xs uppercase tracking-widest">Public Playlist</span>
             <span className="text-on-surface-variant/40 text-xs">•</span>
-            {isAI ? (
+            {isAI && (
               <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary/20 border border-primary/30 text-[10px] font-extrabold text-primary uppercase tracking-wider">
                 AI Generated
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-extrabold text-white uppercase tracking-wider">
-                Manual
               </span>
             )}
           </div>
