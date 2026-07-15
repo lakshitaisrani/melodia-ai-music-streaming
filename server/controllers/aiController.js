@@ -202,11 +202,46 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON array only.`
 
 const getLyrics = async (req, res) => {
     try {
-        const { title, artist } = req.body;
+        const { title, artist, duration } = req.body;
         if (!title) {
             return res.status(400).json({ error: 'Title parameter is required' });
         }
 
+        // 1. Try lrclib.net API (primary source)
+        try {
+            const axios = require('axios');
+            const lrclibParams = {
+                track_name: title,
+                artist_name: artist || ''
+            };
+            if (duration) {
+                lrclibParams.duration = duration;
+            }
+
+            console.log(`Searching lrclib for: ${title} by ${artist}`);
+            // Use their exact matching endpoint
+            const lrclibRes = await axios.get('https://lrclib.net/api/get', {
+                params: lrclibParams,
+                timeout: 5000
+            });
+
+            if (lrclibRes.data && (lrclibRes.data.plainLyrics || lrclibRes.data.syncedLyrics)) {
+                return res.status(200).json({
+                    lyrics: lrclibRes.data.plainLyrics,
+                    syncedLyrics: lrclibRes.data.syncedLyrics,
+                    source: 'lrclib'
+                });
+            }
+        } catch (lrclibError) {
+            if (lrclibError.response && lrclibError.response.status === 404) {
+                console.log('lrclib: No exact match found.');
+            } else {
+                console.warn('lrclib fetch failed:', lrclibError.message);
+            }
+        }
+
+        // 2. Fallback to Groq AI (last resort)
+        console.log(`Falling back to Groq AI for: ${title} by ${artist}`);
         const groq = getGroqClient();
 
         const completion = await groq.chat.completions.create({
@@ -226,8 +261,16 @@ Do not add introductions, explanations, headings, metadata, credits, or markdown
             max_tokens: 2048
         });
 
-        const lyrics = completion.choices[0]?.message?.content || 'Lyrics not found.';
-        res.status(200).json({ lyrics });
+        const lyrics = completion.choices[0]?.message?.content || 'Lyrics not found for this track.';
+        
+        // Add a clear disclaimer if we have to use the AI
+        const disclaimer = "\n\n[Approximate/AI-generated lyrics, may be inaccurate]";
+        
+        res.status(200).json({ 
+            lyrics: lyrics !== 'Lyrics not found for this track.' ? lyrics + disclaimer : lyrics,
+            syncedLyrics: null,
+            source: 'ai'
+        });
     } catch (error) {
         console.error('================ LYRICS FETCH ERROR ================');
         console.error('Error fetching lyrics:', error.message);
