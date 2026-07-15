@@ -67,6 +67,24 @@ export const fetchMyPlaylists = createAsyncThunk('playlist/fetchMyPlaylists', as
     }
 });
 
+export const incrementShareCount = createAsyncThunk('playlist/incrementShareCount', async (id, thunkAPI) => {
+    try {
+        const response = await apiClient.post(`/playlists/${id}/share`);
+        return { id, stats: response.data.stats };
+    } catch (error) {
+        return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
+    }
+});
+
+export const incrementPlayCount = createAsyncThunk('playlist/incrementPlayCount', async (id, thunkAPI) => {
+    try {
+        const response = await apiClient.post(`/playlists/${id}/play`);
+        return { id, stats: response.data.stats };
+    } catch (error) {
+        return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);
+    }
+});
+
 export const generateDiscoverWeekly = createAsyncThunk('playlist/generateDiscoverWeekly', async (_, thunkAPI) => {
     try {
         const response = await apiClient.post('/ai/discover-weekly');
