@@ -413,6 +413,13 @@ router.post('/:id/play', authenticateUser, async (req, res) => {
 
 
 // POST /api/playlists/upload - Upload playlist cover image
+const cloudinary = require('cloudinary').v2;
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 router.post('/upload', authenticateUser, async (req, res) => {
     try {
         const { image } = req.body;
@@ -420,48 +427,25 @@ router.post('/upload', authenticateUser, async (req, res) => {
             return res.status(400).json({ error: 'Image data is required' });
         }
 
-        // Match base64 metadata and data
-        const matches = image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (!matches || matches.length !== 3) {
-            return res.status(400).json({ error: 'Invalid base64 image data' });
-        }
-
-        const imageType = matches[1];
-        const base64Data = matches[2];
-        const buffer = Buffer.from(base64Data, 'base64');
-
         // Validate size (5MB max)
-        if (buffer.length > 5 * 1024 * 1024) {
+        // A base64 string is 4/3 the size of the original data, so 5MB is roughly 6.6MB length
+        if (image.length > 7 * 1024 * 1024) {
             return res.status(400).json({ error: 'Image size exceeds the 5MB limit.' });
         }
 
-        // Determine extension
-        let extension = 'jpg';
-        if (imageType === 'image/png') extension = 'png';
-        else if (imageType === 'image/webp') extension = 'webp';
-        else if (imageType === 'image/jpeg' || imageType === 'image/jpg') extension = 'jpg';
-        else {
-            return res.status(400).json({ error: 'Only JPG, JPEG, PNG, and WebP are allowed' });
-        }
+        console.log(`[Upload] Starting Cloudinary upload...`);
+        const uploadResult = await cloudinary.uploader.upload(image, {
+            folder: 'melodia_playlists',
+            resource_type: 'image'
+        });
 
-        const fs = require('fs');
-        const path = require('path');
-        const uploadsDir = path.join(__dirname, '../uploads');
-        if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-
-        const filename = `playlist_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${extension}`;
-        const filePath = path.join(uploadsDir, filename);
-
-        // Save file
-        fs.writeFileSync(filePath, buffer);
-
-        // Return relative URL path
-        const fileUrl = `/api/uploads/${filename}`;
-        res.status(200).json({ url: fileUrl });
+        console.log(`[Upload Success] Saved to Cloudinary: ${uploadResult.secure_url}`);
+        res.status(200).json({ url: uploadResult.secure_url });
     } catch (error) {
-        console.error('Upload handler error:', error);
+        console.error('================ CLOUDINARY UPLOAD ERROR ================');
+        console.error('Error:', error.message || error);
+        if (error.http_code) console.error('HTTP Code:', error.http_code);
+        console.error('=========================================================');
         res.status(500).json({ error: 'Failed to upload image' });
     }
 });
