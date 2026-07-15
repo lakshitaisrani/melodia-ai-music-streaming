@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { likeSong, unlikeSong } from '../../redux/librarySlice';
 import { setCurrentTrack } from '../../redux/playerSlice';
@@ -40,7 +40,11 @@ const BottomPlayer = () => {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   const [lyrics, setLyrics] = useState('');
+  const [syncedLyricsStr, setSyncedLyricsStr] = useState('');
   const [lyricsLoading, setLyricsLoading] = useState(false);
+  
+  const activeLineRefMini = useRef(null);
+  const activeLineRefFull = useRef(null);
   
   const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(true);
   const [isAutoplayLoading, setIsAutoplayLoading] = useState(false);
@@ -85,12 +89,14 @@ const BottomPlayer = () => {
     if (!currentTrack) return;
     setLyricsLoading(true);
     setLyrics('Searching for lyrics...');
+    setSyncedLyricsStr('');
     try {
       const res = await apiClient.post('/ai/lyrics', {
         title: currentTrack.title,
         artist: currentTrack.artist || currentTrack.channelTitle || 'Unknown Artist'
       });
       setLyrics(res.data.lyrics || 'No lyrics available.');
+      setSyncedLyricsStr(res.data.syncedLyrics || '');
     } catch (err) {
       console.error('================ FRONTEND LYRICS FETCH ERROR ================');
       console.error('Failed to load lyrics:', err.message);
@@ -103,6 +109,113 @@ const BottomPlayer = () => {
     } finally {
       setLyricsLoading(false);
     }
+  };
+
+  const parsedLyrics = useMemo(() => {
+    if (!syncedLyricsStr) return null;
+    const lines = syncedLyricsStr.split('\n');
+    const parsed = [];
+    const timeRegex = /\[(\d{2,}):(\d{2}(?:\.\d{2,3})?)\]/g;
+    
+    for (const line of lines) {
+      const matches = [...line.matchAll(timeRegex)];
+      if (matches.length > 0) {
+        const text = line.replace(timeRegex, '').trim();
+        // Skip metadata tags usually starting with [ar: or [ti: etc.
+        if (text.startsWith('[') && text.endsWith(']')) continue;
+        
+        matches.forEach(match => {
+          const m = parseInt(match[1], 10);
+          const s = parseFloat(match[2]);
+          parsed.push({
+            time: m * 60 + s,
+            text: text
+          });
+        });
+      }
+    }
+    return parsed.length > 0 ? parsed.sort((a, b) => a.time - b.time) : null;
+  }, [syncedLyricsStr]);
+
+  const activeLineIndex = useMemo(() => {
+    if (!parsedLyrics) return -1;
+    let idx = -1;
+    for (let i = 0; i < parsedLyrics.length; i++) {
+      if (parsedLyrics[i].time <= currentTime + 0.2) { 
+        idx = i;
+      } else {
+        break;
+      }
+    }
+    return idx;
+  }, [parsedLyrics, currentTime]);
+
+  useEffect(() => {
+    if (activeLineRefMini.current && isLyricsOpen && !isFullscreen) {
+      activeLineRefMini.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    if (activeLineRefFull.current && isLyricsOpen && isFullscreen) {
+      activeLineRefFull.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [activeLineIndex, isFullscreen, isLyricsOpen]);
+
+  const seekToTime = (time) => {
+    if (!duration) return;
+    if (isPlayingOffline) {
+      if (audioRef.current) {
+        audioRef.current.currentTime = time;
+        setCurrentTime(time);
+      }
+    } else {
+      if (playerRef.current) {
+        playerRef.current.seekTo(time);
+        setCurrentTime(time);
+      }
+    }
+  };
+
+  const renderLyricsList = (isMini = false) => {
+    if (lyricsLoading) {
+      return (
+        <div className={`flex flex-col items-center justify-center ${isMini ? 'py-12' : 'h-full w-full'} gap-3 text-on-surface-variant`}>
+          <BiLoaderAlt className={`animate-spin text-primary ${isMini ? 'w-5 h-5' : 'w-6 h-6'}`} />
+          <span className={isMini ? 'text-xs' : 'text-xs font-bold font-mono'}>{isMini ? 'Fetching lyrics...' : 'Curating lyrics...'}</span>
+        </div>
+      );
+    }
+
+    if (parsedLyrics) {
+      return (
+        <div className={`${isMini ? 'py-24 px-2' : 'py-[30vh] w-full flex flex-col items-center px-4'}`}>
+          {parsedLyrics.map((line, idx) => {
+            const isActive = idx === activeLineIndex;
+            const isPast = idx < activeLineIndex;
+            const ref = isActive ? (isMini ? activeLineRefMini : activeLineRefFull) : null;
+            
+            return (
+              <p 
+                key={idx}
+                ref={ref}
+                onClick={() => seekToTime(line.time)}
+                className={`cursor-pointer transition-all duration-300 ${isMini ? 'py-1.5 min-h-[24px]' : 'py-3 min-h-[32px] w-full max-w-2xl'} font-sans ${
+                  isActive ? `text-white font-black scale-105 ${isMini ? 'text-base' : 'text-2xl md:text-3xl'}` : 
+                  isPast ? `text-white/40 font-bold opacity-60 hover:text-white/80 ${isMini ? 'text-sm' : 'text-xl md:text-2xl'}` : 
+                  `text-white/30 font-bold opacity-40 hover:text-white/80 ${isMini ? 'text-sm' : 'text-xl md:text-2xl'}`
+                }`}
+              >
+                {line.text}
+              </p>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return (
+      <div className={isMini ? 'whitespace-pre-line text-sm text-on-surface-variant font-medium leading-relaxed py-4' : 'whitespace-pre-line text-sm md:text-base lg:text-lg font-bold leading-loose text-white/70 hover:text-white transition-colors duration-300 py-12 px-2 font-sans selection:bg-primary/20 selection:text-white'}>
+        {lyrics}
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -445,17 +558,8 @@ const BottomPlayer = () => {
             Refresh
           </button>
         </div>
-        <div className="max-h-64 overflow-y-auto no-scrollbar p-4 text-center">
-          {lyricsLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2 text-on-surface-variant">
-              <BiLoaderAlt className="w-5 h-5 animate-spin text-primary" />
-              <span className="text-xs">Fetching lyrics...</span>
-            </div>
-          ) : (
-            <p className="whitespace-pre-line text-sm text-on-surface-variant font-medium leading-relaxed">
-              {lyrics}
-            </p>
-          )}
+        <div className="h-64 overflow-y-auto no-scrollbar text-center relative scroll-smooth">
+          {renderLyricsList(true)}
         </div>
       </div>
 
@@ -670,19 +774,10 @@ const BottomPlayer = () => {
                <div className="absolute top-0 left-0 w-full h-12 bg-gradient-to-b from-[#09080c] to-transparent pointer-events-none z-10"></div>
                <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-[#09080c] to-transparent pointer-events-none z-10"></div>
                
-               {/* Scrollable Container */}
-               <div className="w-full h-full overflow-y-auto no-scrollbar p-6 md:p-8 flex flex-col items-center justify-start text-center scroll-smooth">
-                 {lyricsLoading ? (
-                   <div className="flex flex-col items-center justify-center h-full w-full gap-3 text-on-surface-variant">
-                     <BiLoaderAlt className="w-6 h-6 animate-spin text-primary" />
-                     <span className="text-xs font-bold font-mono">Curating lyrics...</span>
-                   </div>
-                 ) : (
-                   <div className="whitespace-pre-line text-sm md:text-base lg:text-lg font-bold leading-loose text-white/70 hover:text-white transition-colors duration-300 py-12 px-2 font-sans selection:bg-primary/20 selection:text-white">
-                     {lyrics}
-                   </div>
-                 )}
-               </div>
+                {/* Scrollable Container */}
+                <div className="w-full h-full overflow-y-auto no-scrollbar flex flex-col items-center justify-start text-center scroll-smooth relative">
+                  {renderLyricsList(false)}
+                </div>
              </div>
            </div>
 
