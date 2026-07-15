@@ -214,62 +214,54 @@ const getLyrics = async (req, res) => {
                 track_name: title,
                 artist_name: artist || ''
             };
-            if (duration) {
-                lrclibParams.duration = duration;
-            }
 
-            console.log(`Searching lrclib for: ${title} by ${artist}`);
-            // Use their exact matching endpoint
-            const lrclibRes = await axios.get('https://lrclib.net/api/get', {
+            const searchUrl = 'https://lrclib.net/api/search';
+            
+            // Log exactly what we're sending for debugging
+            const requestUrl = `${searchUrl}?` + new URLSearchParams(lrclibParams).toString();
+            console.log(`[lrclib Request] GET ${requestUrl}`);
+
+            const lrclibRes = await axios.get(searchUrl, {
                 params: lrclibParams,
                 timeout: 5000
             });
 
-            if (lrclibRes.data && (lrclibRes.data.plainLyrics || lrclibRes.data.syncedLyrics)) {
-                return res.status(200).json({
-                    lyrics: lrclibRes.data.plainLyrics,
-                    syncedLyrics: lrclibRes.data.syncedLyrics,
-                    source: 'lrclib'
-                });
+            if (lrclibRes.data && Array.isArray(lrclibRes.data) && lrclibRes.data.length > 0) {
+                // Find the best match from the results
+                let bestMatch = null;
+                const targetArtist = (artist || '').toLowerCase().trim();
+
+                for (const track of lrclibRes.data) {
+                    const trackArtist = (track.artistName || '').toLowerCase().trim();
+                    // Basic case-insensitive artist match
+                    if (targetArtist && trackArtist.includes(targetArtist)) {
+                        bestMatch = track;
+                        break;
+                    }
+                }
+
+                // If no exact artist match, just pick the first result (fallback logic)
+                if (!bestMatch) {
+                    bestMatch = lrclibRes.data[0];
+                }
+
+                if (bestMatch && (bestMatch.plainLyrics || bestMatch.syncedLyrics)) {
+                    return res.status(200).json({
+                        lyrics: bestMatch.plainLyrics,
+                        syncedLyrics: bestMatch.syncedLyrics,
+                        source: 'lrclib'
+                    });
+                }
             }
         } catch (lrclibError) {
-            if (lrclibError.response && lrclibError.response.status === 404) {
-                console.log('lrclib: No exact match found.');
-            } else {
-                console.warn('lrclib fetch failed:', lrclibError.message);
-            }
+            console.warn('lrclib fetch failed:', lrclibError.message);
         }
 
-        // 2. Fallback to Groq AI (last resort)
-        console.log(`Falling back to Groq AI for: ${title} by ${artist}`);
-        const groq = getGroqClient();
-
-        const completion = await groq.chat.completions.create({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-                {
-                    role: 'system',
-                    content: `You are a lyrics database. Return ONLY the clean text lyrics of the song requested.
-Do not add introductions, explanations, headings, metadata, credits, or markdown. Just the raw lyrics text with line breaks.`
-                },
-                {
-                    role: 'user',
-                    content: `Provide the full lyrics for "${title}" by "${artist || 'Unknown Artist'}".`
-                }
-            ],
-            temperature: 0.2,
-            max_tokens: 2048
-        });
-
-        const lyrics = completion.choices[0]?.message?.content || 'Lyrics not found for this track.';
-        
-        // Add a clear disclaimer if we have to use the AI
-        const disclaimer = "\n\n[Approximate/AI-generated lyrics, may be inaccurate]";
-        
-        res.status(200).json({ 
-            lyrics: lyrics !== 'Lyrics not found for this track.' ? lyrics + disclaimer : lyrics,
+        // If lrclib fails or returns nothing, respond with a clear message (AI fallback removed)
+        return res.status(200).json({ 
+            lyrics: 'Lyrics not found for this track.',
             syncedLyrics: null,
-            source: 'ai'
+            source: 'none'
         });
     } catch (error) {
         console.error('================ LYRICS FETCH ERROR ================');
