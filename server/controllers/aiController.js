@@ -333,7 +333,7 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
             const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
             
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-1.5-flash',
                 contents: promptText,
                 config: {
                     responseMimeType: 'application/json',
@@ -351,7 +351,7 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
                 }
             });
             const text = response.text || '';
-            aiSongs = JSON.parse(text);
+            aiSongs = parseJsonResponse(text);
         } catch (err) {
             console.error('Gemini Discover Weekly recommendation failed, using fallback:', err);
             geminiError = true;
@@ -400,6 +400,7 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
                 discoverPlaylist.description = description;
                 discoverPlaylist.playlistType = 'ai';
                 discoverPlaylist.isAIGenerated = true;
+                discoverPlaylist.generatedBy = 'discover_weekly';
                 await discoverPlaylist.save();
             } else {
                 discoverPlaylist = new Playlist({
@@ -410,7 +411,8 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
                     coverImage,
                     privacy: 'Private',
                     playlistType: 'ai',
-                    isAIGenerated: true
+                    isAIGenerated: true,
+                    generatedBy: 'discover_weekly'
                 });
                 await discoverPlaylist.save();
             }
@@ -423,6 +425,7 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
                 discoverPlaylist.description = description;
                 discoverPlaylist.playlistType = 'ai';
                 discoverPlaylist.isAIGenerated = true;
+                discoverPlaylist.generatedBy = 'discover_weekly';
                 await discoverPlaylist.save();
             } else {
                 discoverPlaylist = mockDb.createPlaylist(userId, {
@@ -432,7 +435,8 @@ Do not wrap the JSON in markdown code blocks. Output raw JSON only.`;
                     coverImage,
                     privacy: 'Private',
                     playlistType: 'ai',
-                    isAIGenerated: true
+                    isAIGenerated: true,
+                    generatedBy: 'discover_weekly'
                 });
             }
         }

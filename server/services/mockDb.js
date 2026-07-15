@@ -77,6 +77,7 @@ module.exports = {
       tags: playlistData.tags || [],
       playlistType: playlistData.playlistType || 'manual',
       isAIGenerated: playlistData.isAIGenerated || (playlistData.playlistType === 'ai') || false,
+      generatedBy: playlistData.generatedBy || '',
       likes: 0,
       likedBy: [],
       saveCount: 0,

@@ -106,6 +106,7 @@ export const generateDiscoverWeekly = createAsyncThunk('playlist/generateDiscove
     try {
         const response = await apiClient.post('/ai/discover-weekly');
         thunkAPI.dispatch(fetchPlaylists());
+        thunkAPI.dispatch(fetchAIPlaylists());
         return response.data.playlist;
     } catch (error) {
         return thunkAPI.rejectWithValue(error.response?.data?.error || error.message);

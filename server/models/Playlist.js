@@ -40,6 +40,10 @@ const playlistSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  generatedBy: {
+    type: String,
+    default: ''
+  },
   likes: {
     type: Number,
     default: 0
