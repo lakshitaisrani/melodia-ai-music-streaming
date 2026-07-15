@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Music2, User, ArrowRight } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { signInWithPopup, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
+import { auth, googleProvider, firebaseConfig } from '../firebase';
 import { setUser } from '../redux/authSlice';
 import apiClient from '../services/apiClient';
 import AuthLayout from '../components/auth/AuthLayout';
@@ -109,6 +109,15 @@ const Signup = () => {
       
       navigate('/explore');
     } catch (error) {
+      console.error('Firebase Auth Network Error Diagnosis:');
+      console.error('Error Code:', error.code);
+      console.error('Error Message:', error.message);
+      
+      const safeConfig = { ...firebaseConfig };
+      if (safeConfig.apiKey) {
+        safeConfig.apiKey = safeConfig.apiKey.substring(0, 5) + '...[REDACTED]';
+      }
+      console.error('Resolved Firebase Config in Vercel:', safeConfig);
       console.error(error);
       let msg = 'Registration failed. Please try again.';
       if (error.code === 'auth/email-already-in-use') {
