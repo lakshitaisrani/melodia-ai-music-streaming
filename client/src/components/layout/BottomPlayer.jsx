@@ -84,7 +84,7 @@ const BottomPlayer = () => {
   const loadLyrics = async () => {
     if (!currentTrack) return;
     setLyricsLoading(true);
-    setLyrics('Loading lyrics from Gemini...');
+    setLyrics('Searching for lyrics...');
     try {
       const res = await apiClient.post('/ai/lyrics', {
         title: currentTrack.title,

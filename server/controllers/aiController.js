@@ -215,46 +215,63 @@ const getLyrics = async (req, res) => {
                 artist_name: artist || ''
             };
 
-            const searchUrl = 'https://lrclib.net/api/search';
-            
-            // Log exactly what we're sending for debugging
-            const requestUrl = `${searchUrl}?` + new URLSearchParams(lrclibParams).toString();
-            console.log(`[lrclib Request] GET ${requestUrl}`);
+            let bestMatch = null;
 
-            const lrclibRes = await axios.get(searchUrl, {
-                params: lrclibParams,
-                timeout: 5000
-            });
+            try {
+                const searchUrl = 'https://lrclib.net/api/search';
+                const requestUrl = `${searchUrl}?` + new URLSearchParams(lrclibParams).toString();
+                console.log(`[lrclib Request] GET ${requestUrl}`);
 
-            if (lrclibRes.data && Array.isArray(lrclibRes.data) && lrclibRes.data.length > 0) {
-                // Find the best match from the results
-                let bestMatch = null;
-                const targetArtist = (artist || '').toLowerCase().trim();
+                // Bumped timeout to 10 seconds for the heavy search endpoint
+                const lrclibRes = await axios.get(searchUrl, {
+                    params: lrclibParams,
+                    timeout: 10000
+                });
 
-                for (const track of lrclibRes.data) {
-                    const trackArtist = (track.artistName || '').toLowerCase().trim();
-                    // Basic case-insensitive artist match
-                    if (targetArtist && trackArtist.includes(targetArtist)) {
-                        bestMatch = track;
-                        break;
+                if (lrclibRes.data && Array.isArray(lrclibRes.data) && lrclibRes.data.length > 0) {
+                    const targetArtist = (artist || '').toLowerCase().trim();
+
+                    for (const track of lrclibRes.data) {
+                        const trackArtist = (track.artistName || '').toLowerCase().trim();
+                        // Basic case-insensitive artist match
+                        if (targetArtist && trackArtist.includes(targetArtist)) {
+                            bestMatch = track;
+                            break;
+                        }
+                    }
+
+                    // If no exact artist match, just pick the first result
+                    if (!bestMatch) {
+                        bestMatch = lrclibRes.data[0];
                     }
                 }
-
-                // If no exact artist match, just pick the first result (fallback logic)
-                if (!bestMatch) {
-                    bestMatch = lrclibRes.data[0];
-                }
-
-                if (bestMatch && (bestMatch.plainLyrics || bestMatch.syncedLyrics)) {
-                    return res.status(200).json({
-                        lyrics: bestMatch.plainLyrics,
-                        syncedLyrics: bestMatch.syncedLyrics,
-                        source: 'lrclib'
+            } catch (searchError) {
+                console.warn(`lrclib search failed (${searchError.message}). Retrying with exact match...`);
+                // Fallback to /api/get if /api/search times out or errors
+                try {
+                    const getUrl = 'https://lrclib.net/api/get';
+                    const getRes = await axios.get(getUrl, {
+                        params: lrclibParams,
+                        timeout: 5000 // exact match is faster
                     });
+                    
+                    if (getRes.data) {
+                        bestMatch = getRes.data;
+                    }
+                } catch (getError) {
+                    console.warn(`lrclib exact match fallback also failed: ${getError.message}`);
                 }
             }
-        } catch (lrclibError) {
-            console.warn('lrclib fetch failed:', lrclibError.message);
+
+            if (bestMatch && (bestMatch.plainLyrics || bestMatch.syncedLyrics)) {
+                return res.status(200).json({
+                    lyrics: bestMatch.plainLyrics,
+                    syncedLyrics: bestMatch.syncedLyrics,
+                    source: 'lrclib'
+                });
+            }
+        } catch (error) {
+            console.error('Unexpected error in lrclib block:', error.message);
         }
 
         // If lrclib fails or returns nothing, respond with a clear message (AI fallback removed)
