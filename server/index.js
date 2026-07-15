@@ -14,23 +14,15 @@ const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
-const frontendUrl = process.env.FRONTEND_URL;
-const cleanFrontendUrl = frontendUrl ? frontendUrl.replace(/\/$/, '') : null;
-const allowedOrigins = [
-    'http://localhost:5173',
-    'https://melodia-ai-music-streaming-client.vercel.app'
-];
-if (cleanFrontendUrl && !allowedOrigins.includes(cleanFrontendUrl)) {
-    allowedOrigins.push(cleanFrontendUrl);
-}
-
-const corsOptions = {
-    origin: allowedOrigins,
-    credentials: true
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // explicitly handle preflight OPTIONS requests
+const allowedOrigins = ['https://melodia-ai-music-streaming-client.vercel.app', 'http://localhost:5173'];
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) callback(null, true);
+    else callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
+app.options('/{*path}', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(morgan('dev'));
