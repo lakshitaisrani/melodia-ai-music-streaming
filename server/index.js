@@ -16,12 +16,21 @@ const app = express();
 
 const frontendUrl = process.env.FRONTEND_URL;
 const cleanFrontendUrl = frontendUrl ? frontendUrl.replace(/\/$/, '') : null;
-const allowedOrigins = cleanFrontendUrl ? [cleanFrontendUrl, 'http://localhost:5173'] : ['http://localhost:5173'];
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://melodia-ai-music-streaming-client.vercel.app'
+];
+if (cleanFrontendUrl && !allowedOrigins.includes(cleanFrontendUrl)) {
+    allowedOrigins.push(cleanFrontendUrl);
+}
 
-app.use(cors({
+const corsOptions = {
     origin: allowedOrigins,
     credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // explicitly handle preflight OPTIONS requests
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(morgan('dev'));
