@@ -60,12 +60,18 @@ mongoose.connection.on('error', err => {
     console.error('Mongoose connection error event:', err);
 });
 
-mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI)
+const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+if (!mongoUri) {
+    console.error('FATAL ERROR: MONGO_URI is not defined in environment variables.');
+    process.exit(1);
+}
+
+mongoose.connect(mongoUri)
     .then(() => console.log('✓ MongoDB Connected'))
     .catch(err => console.error('MongoDB initial connection error:', err));
 
 if (!process.env.VERCEL) {
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
         console.log(`✓ Server running on port ${PORT}`);
     });
 }
