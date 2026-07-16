@@ -45,7 +45,9 @@ router.post('/', authenticateUser, async (req, res) => {
                 tags: tags || [],
                 songs: songs || []
             });
+            console.log(`[Playlist Create] Attempting to save playlist: ${newPlaylist.title} for user: ${req.user._id}`);
             await newPlaylist.save();
+            console.log(`[Playlist Create] Successfully saved playlist: ${newPlaylist._id}`);
         } else {
             newPlaylist = mockDb.createPlaylist(req.user._id, {
                 title,
@@ -59,7 +61,7 @@ router.post('/', authenticateUser, async (req, res) => {
         }
         res.status(201).json(newPlaylist);
     } catch (error) {
-        console.error('Error creating playlist:', error);
+        console.error('[Playlist Create] Error saving playlist:', error);
         res.status(500).json({ error: 'Failed to create playlist' });
     }
 });

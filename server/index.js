@@ -66,9 +66,15 @@ if (!mongoUri) {
     process.exit(1);
 }
 
+const redactedUri = mongoUri.replace(/:([^:@]+)@/, ':[REDACTED]@');
+console.log(`Attempting to connect with URI: ${redactedUri}`);
+
 mongoose.connect(mongoUri)
-    .then(() => console.log('✓ MongoDB Connected'))
-    .catch(err => console.error('MongoDB initial connection error:', err));
+    .then((conn) => console.log(`✓ MongoDB Connected to: ${conn.connection.name}`))
+    .catch(err => {
+        console.error('FATAL ERROR: MongoDB initial connection failed.', err);
+        process.exit(1);
+    });
 
 if (!process.env.VERCEL) {
     app.listen(PORT, '0.0.0.0', () => {
