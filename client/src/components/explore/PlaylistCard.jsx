@@ -1,7 +1,7 @@
 import { Play, Sparkles } from 'lucide-react';
 
 const PlaylistCard = ({ playlist }) => {
-  const isAI = playlist.playlistType === 'ai';
+  const isAI = playlist.playlistType === 'ai' || playlist.playlistType === 'smart_ai' || playlist.playlistType === 'discover_weekly';
   return (
     <div className="relative aspect-[3/4] md:aspect-[4/5] rounded-3xl overflow-hidden group cursor-pointer shadow-xl hover:shadow-2xl transition-shadow">
       <div 
