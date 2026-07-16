@@ -66,14 +66,12 @@ if (!mongoUri) {
     process.exit(1);
 }
 
-const redactedUri = mongoUri.replace(/:([^:@]+)@/, ':[REDACTED]@');
-console.log(`Attempting to connect with URI: ${redactedUri}`);
-
 mongoose.connect(mongoUri)
-    .then((conn) => console.log(`✓ MongoDB Connected to: ${conn.connection.name}`))
+    .then(() => console.log('✓ MongoDB Connected'))
     .catch(err => {
-        console.error('FATAL ERROR: MongoDB initial connection failed.', err);
-        process.exit(1);
+        console.error('FATAL ERROR: MongoDB initial connection failed. Verify your IP is whitelisted in MongoDB Atlas.', err);
+        // Removing process.exit(1) so the Express server stays alive to serve CORS headers and 500 errors.
+        // process.exit(1);
     });
 
 if (!process.env.VERCEL) {
