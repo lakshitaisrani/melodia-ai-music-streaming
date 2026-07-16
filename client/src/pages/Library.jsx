@@ -86,6 +86,7 @@ const Library = () => {
   const { showToast } = useToast();
   const { likedSongs, loading: libraryLoading } = useSelector(state => state.library);
   const { playlists, loading: playlistsLoading, error: playlistsError } = useSelector(state => state.playlist);
+  const manualPlaylists = playlists?.filter(p => !p.playlistType || p.playlistType === 'manual') || [];
   const aiPlaylists = playlists?.filter(p => p.playlistType === 'ai' || p.playlistType === 'smart_ai' || p.playlistType === 'discover_weekly') || [];
   const { user } = useSelector(state => state.auth);
   const { playTrack } = usePlayer();
@@ -205,7 +206,7 @@ const Library = () => {
   // Quick Stats
   const stats = [
     { id: 1, title: 'Liked Songs', count: likedSongs?.length || 0, icon: Heart, color: 'text-primary', bg: 'bg-primary/10' },
-    { id: 2, title: 'My Playlists', count: playlists?.length || 0, icon: ListMusic, color: 'text-secondary', bg: 'bg-secondary/10' },
+    { id: 2, title: 'My Playlists', count: manualPlaylists?.length || 0, icon: ListMusic, color: 'text-secondary', bg: 'bg-secondary/10' },
   ];
 
   const handlePlayLikedSong = (song) => {
@@ -309,8 +310,8 @@ const Library = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {playlistsLoading ? (
                   <div className="text-on-surface-variant p-4 col-span-full">Loading playlists...</div>
-                ) : playlists?.length > 0 ? (
-                  playlists.map((playlist) => (
+                ) : manualPlaylists?.length > 0 ? (
+                  manualPlaylists.map((playlist) => (
                     <Link to={`/playlist/${playlist._id}`} key={playlist._id}>
                       <PlaylistCard playlist={{ 
                         id: playlist._id, 
