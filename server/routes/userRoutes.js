@@ -26,7 +26,14 @@ router.put('/profile', authenticateUser, async (req, res) => {
             user.password = await bcrypt.hash(password, 10);
         }
         
-        await user.save();
+        console.log('Attempting save to db:', mongoose.connection.name, 'collection:', user.collection.name);
+        try {
+            await user.save();
+            console.log('Successfully saved user:', user._id);
+        } catch (saveErr) {
+            console.error('Failed to save user:', saveErr);
+            throw saveErr;
+        }
         
         // Hide password in output
         const responseUser = { ...user.toObject ? user.toObject() : user };

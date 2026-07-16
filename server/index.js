@@ -67,7 +67,10 @@ if (!mongoUri) {
 }
 
 mongoose.connect(mongoUri)
-    .then(() => console.log('✓ MongoDB Connected'))
+    .then(() => {
+        console.log('✓ MongoDB Connected');
+        console.log('MongoDB connected to database:', mongoose.connection.name);
+    })
     .catch(err => {
         console.error('FATAL ERROR: MongoDB initial connection failed. Verify your IP is whitelisted in MongoDB Atlas.', err);
         // Removing process.exit(1) so the Express server stays alive to serve CORS headers and 500 errors.

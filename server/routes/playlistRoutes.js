@@ -45,7 +45,14 @@ router.post('/', authenticateUser, async (req, res) => {
                 tags: tags || [],
                 songs: songs || []
             });
-            await newPlaylist.save();
+            console.log('Attempting save to db:', mongoose.connection.name, 'collection:', Playlist.collection.name);
+            try {
+                await newPlaylist.save();
+                console.log('Successfully saved playlist:', newPlaylist._id);
+            } catch (saveErr) {
+                console.error('Failed to save playlist:', saveErr);
+                throw saveErr;
+            }
         } else {
             newPlaylist = mockDb.createPlaylist(req.user._id, {
                 title,
