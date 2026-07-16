@@ -19,9 +19,12 @@ const authenticateUser = async (req, res, next) => {
         
         let user;
         if (mongoose.connection.readyState === 1) {
-            user = await User.findById(decoded.uid);
-            if (!user) {
-                user = await User.findOne({ firebaseUid: decoded.uid });
+            // decoded.uid is the Firebase UID (string), not a MongoDB ObjectId.
+            // Always search by firebaseUid first, then fall back to _id only if
+            // the value looks like a valid ObjectId.
+            user = await User.findOne({ firebaseUid: decoded.uid });
+            if (!user && mongoose.isValidObjectId(decoded.uid)) {
+                user = await User.findById(decoded.uid);
             }
         } else {
             // MongoDB disconnected - fallback to mock DB
