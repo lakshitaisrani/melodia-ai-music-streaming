@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const authenticateUser = require('../middleware/authMiddleware');
 const router = express.Router();
 
@@ -42,7 +43,7 @@ router.put('/profile', authenticateUser, async (req, res) => {
         res.status(200).json(responseUser);
     } catch (error) {
         console.error('Failed to update user profile:', error);
-        res.status(500).json({ error: 'Failed to update user profile' });
+        res.status(500).json({ error: error.message || 'Failed to update user profile' });
     }
 });
 
