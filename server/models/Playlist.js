@@ -33,7 +33,7 @@ const playlistSchema = new mongoose.Schema({
   },
   playlistType: {
     type: String,
-    enum: ['manual', 'smart_ai', 'discover_weekly'],
+    enum: ['manual', 'ai', 'smart_ai', 'discover_weekly'],
     default: 'manual'
   },
   isAIGenerated: {

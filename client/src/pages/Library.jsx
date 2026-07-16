@@ -86,7 +86,7 @@ const Library = () => {
   const { showToast } = useToast();
   const { likedSongs, loading: libraryLoading } = useSelector(state => state.library);
   const { playlists, loading: playlistsLoading, error: playlistsError } = useSelector(state => state.playlist);
-  const aiPlaylists = playlists?.filter(p => p.playlistType === 'smart_ai' || p.playlistType === 'discover_weekly') || [];
+  const aiPlaylists = playlists?.filter(p => p.playlistType === 'ai' || p.playlistType === 'smart_ai' || p.playlistType === 'discover_weekly') || [];
   const { user } = useSelector(state => state.auth);
   const { playTrack } = usePlayer();
 
