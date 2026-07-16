@@ -1,25 +1,20 @@
 import { Play, Heart, PlusCircle, MoreHorizontal, ArrowDownToLine, CheckCircle2, Loader2, ListPlus } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { likeSong, unlikeSong } from '../../redux/librarySlice';
-import { startDownloading, finishDownloading, removeDownload } from '../../redux/downloadSlice';
 import { addToQueue } from '../../redux/playerSlice';
 import { useState } from 'react';
 import AddToPlaylistModal from '../library/AddToPlaylistModal';
 import { synthesizeMelody } from '../../utils/audioSynthesizer';
-import { saveOfflineTrack, deleteOfflineTrack } from '../../utils/offlineDb';
 
 const SongRow = ({ song, index, onClick }) => {
   const dispatch = useDispatch();
   const { likedSongs } = useSelector(state => state.library);
-  const { downloadedSongs, downloadingSongs } = useSelector(state => state.downloads);
   const { user } = useSelector(state => state.auth);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   
   const videoId = song.id || song.videoId;
   const isLiked = likedSongs?.some(s => s.videoId === videoId);
-  const isDownloaded = downloadedSongs?.some(s => s.videoId === videoId);
-  const isDownloading = downloadingSongs?.[videoId];
 
   const handleLike = (e) => {
     e.stopPropagation();
@@ -36,50 +31,6 @@ const SongRow = ({ song, index, onClick }) => {
         duration: song.duration
       }));
     }
-  };
-
-  const handleDownload = (e) => {
-    e.stopPropagation();
-    if (isDownloading) return;
-
-    if (isDownloaded) {
-      // Toggle off / remove download
-      dispatch(removeDownload(videoId));
-      deleteOfflineTrack(videoId).catch(err => console.error("Failed to delete offline track DB entry:", err));
-      return;
-    }
-
-    dispatch(startDownloading(videoId));
-
-    const initiateDownload = async () => {
-      try {
-        console.log(`Generating offline WAV melody for track: "${song.title}"`);
-        const audioBlob = await synthesizeMelody(song.title);
-        await saveOfflineTrack(videoId, audioBlob);
-        console.log(`Successfully saved track "${song.title}" offline in IndexedDB.`);
-
-        const songData = {
-          videoId,
-          title: song.title,
-          artist: song.artist || song.channelTitle || 'Unknown Artist',
-          thumbnail: song.image || song.thumbnail,
-          duration: song.duration
-        };
-        dispatch(finishDownloading(songData));
-      } catch (err) {
-        console.error("Offline synthesis/saving failed:", err);
-        // Fallback: save placeholder data
-        const songData = {
-          videoId,
-          title: song.title,
-          artist: song.artist || song.channelTitle || 'Unknown Artist',
-          thumbnail: song.image || song.thumbnail,
-          duration: song.duration
-        };
-        dispatch(finishDownloading(songData));
-      }
-    };
-    initiateDownload();
   };
 
   const handleAddToPlaylist = (e) => {
@@ -125,21 +76,6 @@ const SongRow = ({ song, index, onClick }) => {
           </button>
           <button onClick={handleAddToPlaylist} className="p-2 text-on-surface-variant hover:text-primary transition-colors hidden sm:block">
             <PlusCircle className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={handleDownload}
-            className={`p-2 transition-colors ${
-              isDownloaded ? 'text-primary' : 'text-on-surface-variant hover:text-white'
-            }`}
-            title={isDownloaded ? "Remove Offline Download" : "Download Offline"}
-          >
-            {isDownloading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : isDownloaded ? (
-              <CheckCircle2 className="w-4 h-4 text-[#3cddc7]" />
-            ) : (
-              <ArrowDownToLine className="w-4 h-4" />
-            )}
           </button>
           <div className="relative">
             <button 

@@ -50,17 +50,6 @@ const SideNavBar = () => {
           <Heart size={20} className="text-on-surface-variant" />
           <span className="text-sm tracking-wide">Liked Songs</span>
         </Link>
-        <Link
-          to="/library?tab=downloads"
-          className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 font-bold ${
-            activePath === '/library' && location.search.includes('tab=downloads')
-              ? 'text-on-surface hover:bg-white/5'
-              : 'text-on-surface-variant hover:bg-white/5 hover:text-on-surface'
-          }`}
-        >
-          <Download size={20} className="text-on-surface-variant" />
-          <span className="text-sm tracking-wide">Downloads</span>
-        </Link>
       </div>
     </aside>
   );

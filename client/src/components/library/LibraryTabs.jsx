@@ -28,15 +28,6 @@ const LibraryTabs = ({ activeTab, onTabChange }) => {
           <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_8px_rgba(221,183,255,0.8)]" />
         )}
       </button>
-      <button 
-        onClick={() => onTabChange('downloads')}
-        className={`pb-4 font-bold transition-all relative shrink-0 ${activeTab === 'downloads' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
-      >
-        ⬇ Downloads
-        {activeTab === 'downloads' && (
-          <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full shadow-[0_0_8px_rgba(221,183,255,0.8)]" />
-        )}
-      </button>
     </div>
   );
 };

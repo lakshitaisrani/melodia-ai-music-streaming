@@ -87,7 +87,6 @@ const Library = () => {
   const { likedSongs, loading: libraryLoading } = useSelector(state => state.library);
   const { playlists, loading: playlistsLoading, error: playlistsError } = useSelector(state => state.playlist);
   const aiPlaylists = playlists?.filter(p => p.playlistType === 'smart_ai' || p.playlistType === 'discover_weekly') || [];
-  const { downloadedSongs } = useSelector(state => state.downloads);
   const { user } = useSelector(state => state.auth);
   const { playTrack } = usePlayer();
 
@@ -207,7 +206,6 @@ const Library = () => {
   const stats = [
     { id: 1, title: 'Liked Songs', count: likedSongs?.length || 0, icon: Heart, color: 'text-primary', bg: 'bg-primary/10' },
     { id: 2, title: 'My Playlists', count: playlists?.length || 0, icon: ListMusic, color: 'text-secondary', bg: 'bg-secondary/10' },
-    { id: 3, title: 'Offline Downloads', count: downloadedSongs?.length || 0, icon: Download, color: 'text-tertiary', bg: 'bg-tertiary/10' },
   ];
 
   const handlePlayLikedSong = (song) => {
@@ -244,7 +242,7 @@ const Library = () => {
         </section>
 
         {/* Stats Bento */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           {stats.map(stat => (
             <div key={stat.id} className="bg-surface-container/60 p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-all group hover:bg-surface-container-high h-44 flex flex-col justify-between">
               <div>
@@ -404,25 +402,6 @@ const Library = () => {
               </div>
             )}
 
-            {activeTab === 'downloads' && (
-              <div className="flex flex-col gap-1">
-                {downloadedSongs?.length > 0 ? (
-                  downloadedSongs.map((song, idx) => (
-                    <SongRow 
-                      key={song.videoId || idx} 
-                      song={song} 
-                      index={idx} 
-                      onClick={() => playTrack(song, downloadedSongs)} 
-                    />
-                  ))
-                ) : (
-                  <div className="text-on-surface-variant p-4 text-center py-12">
-                    <Download className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                    <p>You haven't downloaded any songs for offline listening yet.</p>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </section>
         
