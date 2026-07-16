@@ -70,10 +70,7 @@ const mongooseOptions = {
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
     family: 4, // Use IPv4, skip trying IPv6
-    maxPoolSize: 50,
-    tls: true,
-    tlsAllowInvalidCertificates: true, // Diagnostic only
-    tlsInsecure: true // Diagnostic only
+    maxPoolSize: 50
 };
 
 const connectWithRetry = () => {
