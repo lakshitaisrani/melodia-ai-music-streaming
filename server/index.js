@@ -66,16 +66,27 @@ if (!mongoUri) {
     process.exit(1);
 }
 
-mongoose.connect(mongoUri)
-    .then(() => {
-        console.log('✓ MongoDB Connected');
-        console.log('MongoDB connected to database:', mongoose.connection.name);
-    })
-    .catch(err => {
-        console.error('FATAL ERROR: MongoDB initial connection failed. Verify your IP is whitelisted in MongoDB Atlas.', err);
-        // Removing process.exit(1) so the Express server stays alive to serve CORS headers and 500 errors.
-        // process.exit(1);
-    });
+const mongooseOptions = {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    family: 4, // Use IPv4, skip trying IPv6
+    maxPoolSize: 50
+};
+
+const connectWithRetry = () => {
+    console.log('Attempting MongoDB connection...');
+    mongoose.connect(mongoUri, mongooseOptions)
+        .then(() => {
+            console.log('✓ MongoDB Connected');
+            console.log('MongoDB connected to database:', mongoose.connection.name);
+        })
+        .catch(err => {
+            console.error('MongoDB connection failed. Retrying in 5 seconds...', err.message);
+            setTimeout(connectWithRetry, 5000);
+        });
+};
+
+connectWithRetry();
 
 if (!process.env.VERCEL) {
     app.listen(PORT, '0.0.0.0', () => {

@@ -23,12 +23,15 @@
     "firebase-admin": "^14.1.0",
     "groq-sdk": "^1.3.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.7.4",
+    "mongoose": "^8.9.5",
     "nodemailer": "^9.0.3"
   },
   "devDependencies": {
     "morgan": "^1.11.0",
     "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": "20.x"
   },
   "overrides": {
     "jose": "^4.15.9"
